@@ -75,70 +75,85 @@ record = loadmat('/Users/aleksandr/PycharmProjects/AI_ECG/JS00001.mat')
 ecg10 = list(record["val"][10])
 for i in range(4999, 1, -1):
     ecg10.insert(i, (ecg10[i - 1] + ecg10[i]) / 2)
-# plt.plot(ecg10)
-# plt.show()
+
+
 
 
 v = np.linspace(0.5 * np.pi, 1.5 * np.pi, 15)
 peak_filter = np.sin(v)
 ecg_transformed = np.correlate(ecg10, peak_filter, mode="same")
 
-plt.figure(figsize=(15,6))
+
+
+plt.figure(figsize=(15, 6))
 plt.title('ECG signal - 500 Hz')
-plt.plot(ecg_transformed, alpha = 0.8, c='orange')
-plt.plot(ecg10, alpha = 1)
+plt.plot(ecg_transformed, alpha=0.8, c='orange')
+plt.plot(ecg10, alpha=1)
 plt.gca().legend(('filtered', 'raw signal'))
 plt.xlabel('Time (milliseconds)')
 #plt.show()
 
 
-diff_sig_ecg = np.diff(ecg_transformed)
-rr_peaks, _ = find_peaks(ecg_transformed, height=1500, distance=500 * 3 / 5)
+
+
+rr_peaks, _ = find_peaks(ecg_transformed, height=1500, distance=240)
 plt.plot(ecg_transformed, alpha = 0.8)
 plt.scatter(rr_peaks, ecg_transformed[rr_peaks], color='red')
-plt.xlim(0,10000)
+plt.xlim(0, 10000)
 plt.title("ECG signal - 500 Hz")
 plt.show()
 
 
 
-rr_ecg = np.diff(rr_peaks)
-
-x_ecg = np.cumsum(rr_ecg)/1000
-f_ecg = interp1d(x_ecg, rr_ecg, kind='cubic', fill_value= 'extrapolate')
-fs = 4
-steps = 1 / fs
-# sample using the interpolation function
-xx_ecg = np.arange(0, np.max(x_ecg), steps)
-rr_interpolated_ecg = f_ecg(xx_ecg)
-plt.subplot(211)
-plt.title('rr-intervals')
-plt.plot(x_ecg, rr_ecg, color='k', markerfacecolor='#A999D1',marker='o')
-plt.ylabel('rr-interval (ms)')
-plt.subplot(212)
-
-plt.title('rr-intervals (cubic interpolation)')
-plt.plot(xx_ecg, rr_interpolated_ecg, color='r')
-plt.xlabel('Time (s)')
-plt.ylabel('RR-interval (ms)')
-plt.show()
 
 
+rr_diffs = np.diff(rr_peaks)
 
-rr_ecg[np.abs(zscore(rr_ecg)) > 2] = np.median(rr_ecg)
-x_ecg = np.cumsum(rr_ecg)/1000
-f_ecg = interp1d(x_ecg, rr_ecg, kind='cubic', fill_value= 'extrapolate')
-xx_ecg = np.arange(0, np.max(x_ecg), steps)
-clean_rr_interpolated_ecg = f_ecg(xx_ecg)
-plt.figure(figsize=(25,5))
-plt.title('Error using z-score')
-plt.plot(rr_interpolated_ecg)
-plt.plot(clean_rr_interpolated_ecg)
-plt.xlabel('Time (s)')
-plt.ylabel('RR-interval (ms)')
-plt.show()
+hr = len(rr_diffs) * (60 / (len(ecg10) / 1000))
 
-print(timedomain(rr_ecg))
+rr_E = sum(rr_diffs) / len(rr_diffs)
+
+_rr_diffs = []
+for i in rr_diffs:
+    _rr_diffs.append((i - rr_E) ** 2)
+
+disperssion = sum(_rr_diffs) / len(rr_diffs)
+
+# x_ecg = np.cumsum(rr_ecg)/1000
+# f_ecg = interp1d(x_ecg, rr_ecg, kind='cubic', fill_value= 'extrapolate')
+# fs = 4
+# steps = 1 / fs
+# # sample using the interpolation function
+# xx_ecg = np.arange(0, np.max(x_ecg), steps)
+# rr_interpolated_ecg = f_ecg(xx_ecg)
+# plt.subplot(211)
+# plt.title('rr-intervals')
+# plt.plot(x_ecg, rr_ecg, color='k', markerfacecolor='#A999D1',marker='o')
+# plt.ylabel('rr-interval (ms)')
+# plt.subplot(212)
+#
+# plt.title('rr-intervals (cubic interpolation)')
+# plt.plot(xx_ecg, rr_interpolated_ecg, color='r')
+# plt.xlabel('Time (s)')
+# plt.ylabel('RR-interval (ms)')
+# plt.show()
+
+
+
+# rr_diffs[np.abs(zscore(rr_diffs)) > 2] = np.median(rr_diffs)
+# x_ecg = np.cumsum(rr_ecg)/1000
+# f_ecg = interp1d(x_ecg, rr_ecg, kind='cubic', fill_value= 'extrapolate')
+# xx_ecg = np.arange(0, np.max(x_ecg), steps)
+# clean_rr_interpolated_ecg = f_ecg(xx_ecg)
+# plt.figure(figsize=(25,5))
+# plt.title('Error using z-score')
+# plt.plot(rr_interpolated_ecg)
+# plt.plot(clean_rr_interpolated_ecg)
+# plt.xlabel('Time (s)')
+# plt.ylabel('RR-interval (ms)')
+# plt.show()
+
+print(timedomain(rr_diffs))
 
 
 # HR_times = get_HR_times(record)

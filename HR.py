@@ -29,8 +29,7 @@ def timedomain(rr):
 
 record = loadmat('/Users/aleksandr/PycharmProjects/AI_ECG/JS00001.mat')
 ecg10 = list(record["val"][10])
-for i in range(4999, 1, -1):
-    ecg10.insert(i, (ecg10[i - 1] + ecg10[i]) / 2)
+ecg_len_to_time_ratio = int(10000.0 / len(ecg10))
 
 
 
@@ -43,8 +42,8 @@ ecg_transformed = np.correlate(ecg10, peak_filter, mode="same")
 
 plt.figure(figsize=(15, 6))
 plt.title('ECG signal - 500 Hz')
-plt.plot(ecg_transformed, alpha=0.8, c='orange')
-plt.plot(ecg10, alpha=1)
+plt.plot(range(0, 10000, ecg_len_to_time_ratio), ecg_transformed, alpha=0.8, c='orange')
+plt.plot(range(0, 10000, ecg_len_to_time_ratio), ecg10, alpha=1)
 plt.gca().legend(('filtered', 'raw signal'))
 plt.xlabel('Time (milliseconds)')
 #plt.show()
@@ -52,21 +51,20 @@ plt.xlabel('Time (milliseconds)')
 
 
 
-rr_peaks, _ = find_peaks(ecg_transformed, height=1500, distance=240)
-plt.plot(ecg_transformed, alpha = 0.8)
-plt.scatter(rr_peaks, ecg_transformed[rr_peaks], color='red')
+rr_peaks, _ = find_peaks(ecg_transformed, height=1500, distance=120)
+plt.scatter(ecg_len_to_time_ratio * rr_peaks, ecg_transformed[rr_peaks], color='red')
 plt.xlim(0, 10000)
 plt.title("ECG signal - 500 Hz")
 plt.show()
 
 
 
-
+rr_peaks *= ecg_len_to_time_ratio
 rr_diffs = np.diff(rr_peaks)
 
-hr = len(rr_diffs) * (60 / (len(ecg10) / 1000))
+hr = len(rr_peaks) * (60 / 10)
 
-rr_E = sum(rr_diffs) / len(rr_diffs)
+rr_E = sum(rr_diffs) / len(rr_diffs) * 2
 
 _rr_diffs = []
 for i in rr_diffs:

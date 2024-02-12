@@ -33,7 +33,6 @@ ecg_len_to_time_ratio = int(10000.0 / len(ecg10))
 
 
 
-
 v = np.linspace(0.5 * np.pi, 1.5 * np.pi, 15)
 peak_filter = np.sin(v)
 ecg_transformed = np.correlate(ecg10, peak_filter, mode="same")

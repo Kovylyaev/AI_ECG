@@ -12,6 +12,7 @@ from scipy.stats import zscore
 from statsmodels.graphics import tsaplots
 
 
+
 def timedomain(rr):
     results = {}
     hr = 60000/rr
@@ -36,12 +37,12 @@ def my_correlate(ecg10, peak_filter):
 
 
 
-record = loadmat('/Users/aleksandr/PycharmProjects/AI_ECG/JS00006.mat')
+record = loadmat('/Users/aleksandr/PycharmProjects/AI_ECG/JS23462.mat')
 ecg10 = np.array(list(record["val"][10]))
 ecg_len_to_time_ratio = int(10000.0 / len(ecg10))
 
 
-v = np.linspace(-0.5 * np.pi, 1.5 * np.pi, 30)
+v = np.linspace(-0.5 * np.pi, 1.5 * np.pi, 15)
 peak_filter = np.sin(v)
 ecg_transformed = my_correlate(ecg10, peak_filter)
 
@@ -58,7 +59,7 @@ plt.xlabel('Time (milliseconds)')
 
 
 
-rr_peaks500, _ = find_peaks(ecg_transformed, height=1500, distance=120)
+rr_peaks500, _ = find_peaks(ecg_transformed, height=2500, distance=120)
 rr_peaks1000 = rr_peaks500 * ecg_len_to_time_ratio
 plt.scatter(rr_peaks1000, ecg_transformed[rr_peaks500], color='red')
 plt.xlim(-100, 10100)
@@ -104,7 +105,7 @@ if (rr_peaks1000[0] < min_dist_to_left_edge):
     left_offset += rr_peaks500[0]                          # если они слишком близко к краю
 
 ecg_cutted_transformed = my_correlate(ecg10_cutted, peak_filter)
-rr_peaks_new, _ = find_peaks(ecg_cutted_transformed, height=1500, distance=120)
+rr_peaks_new, _ = find_peaks(ecg_cutted_transformed, height=2500, distance=120)
 right_edge = rr_peaks_new[-1] + int(min_dist_to_right_edge / 2)
 left_edge = rr_peaks_new[0] - int(min_dist_to_left_edge / 2)
 ecg10_cutted = ecg10_cutted[:right_edge]   # обрезаем, если они

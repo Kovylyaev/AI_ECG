@@ -12,12 +12,7 @@ from torch.autograd import Variable
 # sorted_paths = sorted(paths)
 
 
-def a(i):
-     if i == 0:
-          return 0
-     raise 13
-
-try:
-     print(a(1))
-except:
-     print()
+b = torch.tensor([[[1,5], [2,6]],
+                  [[3,7], [4,8]]])
+b = b.swapaxes(0,1)
+print(0)

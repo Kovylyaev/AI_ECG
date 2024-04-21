@@ -3,13 +3,14 @@ import wfdb
 import os
 from os.path import exists
 from pathlib import Path
-import torch #pytorch
+import torch  # pytorch
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.utils.data
 from torchvision.transforms import ToTensor
 
 from my_dataset import ECGs_Dataset
+
 #
 # test_dataset = ECGs_Dataset(ecgs="/Users/aleksandr/PycharmProjects/AI_ECG/all_test_ECGs",
 #                             diags="/Users/aleksandr/PycharmProjects/AI_ECG/all_test_Diags")

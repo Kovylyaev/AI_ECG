@@ -1,11 +1,8 @@
 import os
 import random
-from copy import deepcopy
 from os.path import exists
 from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.io import loadmat
 import wfdb
 from scipy.signal import find_peaks
 
@@ -36,18 +33,24 @@ def cut_n_fill(ecg):
     rr_peaks1000 = rr_peaks500 * ecg_len_to_time_ratio
 
     # Проверка первого и последнего зубца на полное вхождение в запись
-    min_dist_to_left_edge = int(min(500, rr_peaks500[1] - rr_peaks500[0]))  # минимальное расстояние до границ записи
-    min_dist_to_right_edge = int(min(500, rr_peaks500[-1] - rr_peaks500[-2]))  # в миллисекундах
+    min_dist_to_left_edge = int(
+        min(500, rr_peaks500[1] - rr_peaks500[0])
+    )  # минимальное расстояние до границ записи
+    min_dist_to_right_edge = int(
+        min(500, rr_peaks500[-1] - rr_peaks500[-2])
+    )  # в миллисекундах
 
     ecg10_cutted = ecg10
     left_offset = 0
 
-    if (10000 - rr_peaks1000[-1] < min_dist_to_right_edge):
-        ecg10_cutted = ecg10_cutted[:rr_peaks500[-1]]
-        ecg = ecg[: , :rr_peaks500[-1]]
+    if 10000 - rr_peaks1000[-1] < min_dist_to_right_edge:
+        ecg10_cutted = ecg10_cutted[: rr_peaks500[-1]]
+        ecg = ecg[:, : rr_peaks500[-1]]
 
-    if (rr_peaks1000[0] < min_dist_to_left_edge):
-        ecg10_cutted = ecg10_cutted[rr_peaks500[0]:]  # обрезали по первому и последнему пику,
+    if rr_peaks1000[0] < min_dist_to_left_edge:
+        ecg10_cutted = ecg10_cutted[
+            rr_peaks500[0]:
+        ]  # обрезали по первому и последнему пику,
         left_offset += rr_peaks500[0]  # если они слишком близко к краю
         ecg = ecg[:, rr_peaks500[0]:]
 
@@ -65,7 +68,7 @@ def cut_n_fill(ecg):
     n = 5000 - len(ecg10_cutted)
     if left_edge < 0 or right_edge < 0 or n > 2000:
         raise 13
-    ecg = np.pad(ecg, ((0, 0), (n, 0)), 'constant', constant_values=padding)
+    ecg = np.pad(ecg, ((0, 0), (n, 0)), "constant", constant_values=padding)
 
     # plt.figure(figsize=(10, 5))
     # plt.plot(range(0, 10000, 2), ecg[10], alpha=0.8, c='orange')
@@ -89,14 +92,14 @@ def normalization(ecg):
     return ecg
 
 
-
-
 ECGs_train = []
 ECGs_test = []
 Diagnoses_train = []
 Diagnoses_test = []
 
-paths = Path("/Users/aleksandr/PycharmProjects/AI_ECG/a-large-scale-12-lead-electrocardiogram-database-for-arrhythmia-study-1.0.0").rglob("*.mat")
+paths = Path(
+    "/Users/aleksandr/PycharmProjects/AI_ECG/a-large-scale-12-lead-electrocardiogram-database-for-arrhythmia-study-1.0.0"
+).rglob("*.mat")
 paths = sorted(paths)
 random.shuffle(paths)
 
@@ -110,8 +113,7 @@ for ind, filename in zip(range(len(paths)), paths):
         patient_ecg = cut_n_fill(patient_ecg)
         patient_ecg = normalization(patient_ecg)
     except:
-        continue                               # 13 - чересчур странная ЭКГ (не представляется возможным её нормально обрезать)
-
+        continue  # 13 - чересчур странная ЭКГ (не представляется возможным её нормально обрезать/обработать)
 
     if ind < 37001:
         ECGs_train.append(patient_ecg)
@@ -127,19 +129,19 @@ train_Diags_np = np.array(Diagnoses_train)
 test_ECGs_np = np.array(ECGs_test)
 test_Diags_np = np.array(Diagnoses_test)
 
-if exists(f"all_train_ECGs"):
-    os.remove(f"all_train_ECGs")
-if exists(f"all_train_Diags"):
-    os.remove(f"all_train_Diags")
-if exists(f"all_test_ECGs"):
-    os.remove(f"all_test_ECGs")
-if exists(f"all_test_Diags"):
-    os.remove(f"all_test_Diags")
+if exists("all_train_ECGs"):
+    os.remove("all_train_ECGs")
+if exists("all_train_Diags"):
+    os.remove("all_train_Diags")
+if exists("all_test_ECGs"):
+    os.remove("all_test_ECGs")
+if exists("all_test_Diags"):
+    os.remove("all_test_Diags")
 
-file_train_ecg = open(f"all_train_ECGs", "wb")
-file_train_diag = open(f"all_train_Diags", "wb")
-file_test_ecg = open(f"all_test_ECGs", "wb")
-file_test_diag = open(f"all_test_Diags", "wb")
+file_train_ecg = open("all_train_ECGs", "wb")
+file_train_diag = open("all_train_Diags", "wb")
+file_test_ecg = open("all_test_ECGs", "wb")
+file_test_diag = open("all_test_Diags", "wb")
 np.save(file_train_ecg, train_ECGs_np)
 np.save(file_train_diag, train_Diags_np)
 np.save(file_test_ecg, test_ECGs_np)

@@ -1,33 +1,25 @@
-import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.backends.cudnn
-import numpy as np
-import time
-import random
-import torch
-from torch.utils.data import Dataset
-from torchvision import datasets
-from torchvision.transforms import ToTensor
-import matplotlib.pyplot as plt
-from my_dataset import ECGs_Dataset
+# import numpy as np
 
 
 class LSTM_ECGs_arithm(nn.Module):
-    def __init__(self,
-                 input_dim,
-                 output_dim,
-                 hidden_dim=32,  # 128
-                 n_layers=1,  # 2
-                 dropout=0.,  # 0.25
-                 ):
+    def __init__(
+            self,
+            input_dim,
+            output_dim,
+            hidden_dim=32,  # 128
+            n_layers=1,  # 2
+            dropout=0.0,  # 0.25
+    ):
         super().__init__()
 
-        self.lstm = nn.LSTM(input_dim,
-                            hidden_dim,
-                            num_layers=n_layers,
-                            bidirectional=False,
-                            dropout=dropout)
+        self.lstm = nn.LSTM(
+            input_dim,
+            hidden_dim,
+            num_layers=n_layers,
+            bidirectional=False,
+            dropout=dropout,
+        )
 
         self.fc = nn.Linear(hidden_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
@@ -57,9 +49,9 @@ class LSTM_ECGs_arithm(nn.Module):
             prediction, shape is [batch size, output dim]
         """
 
-        reshaped = (records.swapaxes(0,1)).swapaxes(0,2)
+        reshaped = (records.swapaxes(0, 1)).swapaxes(0, 2)
         outputs, (hidden, cell) = self.lstm(reshaped)
-        p = np.array(reshaped)
+        # p = np.array(reshaped)
         # for i in p:
         #     for j in i:
         #         if any(np.isnan(k) for k in j):

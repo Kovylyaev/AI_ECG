@@ -1,5 +1,6 @@
 import os
 import random
+from copy import deepcopy
 from os.path import exists
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -74,6 +75,20 @@ def cut_n_fill(ecg):
     return ecg
 
 
+def normalization(ecg):
+    for i in range(len(ecg)):
+        for j in range(len(ecg[i])):
+            if np.isnan(ecg[i][j]):
+                ecg[i][j] = ecg[i][j - 1]
+
+        minn = min(ecg[i])
+        maxx = max(ecg[i])
+        if maxx - minn < 0.00001:
+            raise 13
+        ecg[i] = (ecg[i] - minn) / (maxx - minn)
+    return ecg
+
+
 
 
 ECGs_train = []
@@ -84,23 +99,18 @@ Diagnoses_test = []
 paths = Path("/Users/aleksandr/PycharmProjects/AI_ECG/a-large-scale-12-lead-electrocardiogram-database-for-arrhythmia-study-1.0.0").rglob("*.mat")
 paths = sorted(paths)
 random.shuffle(paths)
-paths = list(paths)
-paths = ["/Users/aleksandr/PycharmProjects/AI_ECG/JS08417", *paths]
 
 
 for ind, filename in zip(range(len(paths)), paths):
-    if ind == 0:
-        record = wfdb.rdrecord(filename)
-    else:
-        s = filename.resolve()
-        record = wfdb.rdrecord(f"{s.parent}/{s.stem}")
+    s = filename.resolve()
+    record = wfdb.rdrecord(f"{s.parent}/{s.stem}")
     patient_ecg = np.matrix.transpose(record.p_signal) * 1000
 
     try:
         patient_ecg = cut_n_fill(patient_ecg)
+        patient_ecg = normalization(patient_ecg)
     except:
         continue                               # 13 - чересчур странная ЭКГ (не представляется возможным её нормально обрезать)
-
 
 
     if ind < 37001:

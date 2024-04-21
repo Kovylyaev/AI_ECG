@@ -28,7 +28,7 @@ class ECGs_Dataset(torch.utils.data.Dataset):
         """
 
         record = self.ecgs[idx]
-        diag = self.diags[idx]
+        diag = torch.tensor(self.diags[idx])  # 1 - синусовый ритм, 0 - аритмия
 
         # return self.transforms(image), self.labels[idx]
         return record, diag

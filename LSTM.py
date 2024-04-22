@@ -59,6 +59,6 @@ class LSTM_ECGs_arithm(nn.Module):
         #     #print()
         predictions = self.fc(outputs[-1])
 
-        predictions = self.sigmoid(predictions)
+        #predictions = self.sigmoid(predictions)
 
         return predictions

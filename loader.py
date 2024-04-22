@@ -4,6 +4,7 @@ from os.path import exists
 from pathlib import Path
 import numpy as np
 import wfdb
+from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 
 

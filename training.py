@@ -36,14 +36,14 @@ test_loader = torch.utils.data.DataLoader(
 print("Dataloaders configured")
 input_dim = train_dataset.ecgs.shape[1]
 
-output_dim = 2  # arithmia or norm
+output_dim = 1  # arithmia or norm
 
 model = LSTM_ECGs_arithm(input_dim, output_dim)
 
 
-optimizer = optim.Adam(model.parameters(), lr=1e-2)
+optimizer = optim.Adam(model.parameters(), lr=1e-1)
 
-criterion = nn.CrossEntropyLoss()
+criterion = nn.BCEWithLogitsLoss()
 
 
 def categorical_accuracy(preds, y):
@@ -51,51 +51,40 @@ def categorical_accuracy(preds, y):
     Returns accuracy per batch, i.e. if you get 8/10 right, this returns 0.8, NOT 8
     """
     y = np.array(y)
-    correct = [int(preds[i][y[i]] > preds[i][1 - y[i]]) for i in range(len(y))]
+    correct = [int((preds[i] > 0.5 and y[i] > 0.5) or (preds[i] < 0.5 and y[i] < 0.5)) for i in range(len(y))]
     return sum(correct) / len(correct)
 
 
-def F_score(preds, y):
-    P = 0
-    R = 0
+def Errors(preds, y):
     tp, tn, fp, fn = 0, 0, 0, 0
+    arithm, norm = 0, 0
     for i in range(len(y)):
-        if y[i] == 1 and preds[i][0] < preds[i][1]:
+        if y[i] >= 0.5 and preds[i] > 0.5:
             tp += 1
-        elif y[i] == 0 and preds[i][0] > preds[i][1]:
+            arithm += 1
+        elif y[i] <= 0.5 and preds[i] < 0.5:
             tn += 1
-        elif y[i] == 0 and preds[i][0] < preds[i][1]:
+            norm += 1
+        elif y[i] <= 0.5 and preds[i] > 0.5:
             fp += 1
+            norm += 1
         else:
             fn += 1
+            arithm += 1
 
-    if tp + fp == 0:
-        P = 0
-    else:
-        P = tp / (tp + fp)
-
-    if tp + fn == 0:
-        R = 0
-    else:
-        R = tp / (tp + fn)
-
-    # print(f"P = {P}, R = {R}")
-    if P == 0 and R == 0:
-        F = 0
-    else:
-        F = 2 * P * R / (P + R)
-    return F
+    return tp / arithm, tn / norm#, fp, fn
 
 
 def train(model, loader, optimizer, criterion):
     epoch_loss = 0
     epoch_acc = 0
-    epoch_F = 0
+    epoch_TP, epoch_TN = 0, 0
 
     model.train()
 
     num = 0
     for records, diags in loader:
+
         optimizer.zero_grad()
 
         # records = [batch size, num of ecg canals, record len (5000)]
@@ -112,10 +101,12 @@ def train(model, loader, optimizer, criterion):
         # # diags = [sent len * batch size]
         # predictions = predictions.reshape(-1)
 
-        loss = criterion(predictions, diags)
+        #predictions = torch.squeeze(predictions)
+
+        loss = criterion(torch.squeeze(predictions), diags)
 
         acc = categorical_accuracy(predictions, diags)
-        F = F_score(predictions, diags)
+        TP, TN = Errors(predictions, diags)
 
         loss.backward()
 
@@ -123,21 +114,19 @@ def train(model, loader, optimizer, criterion):
 
         epoch_loss += loss.item()
         epoch_acc += acc
-        epoch_F += F
+        epoch_TP += TP
+        epoch_TN += TN
 
         num += 1
-        print(num, end=" ")
-        print(f"epoch_F = {epoch_F}, loss = {epoch_loss}")
+        print(f"{num}/{len(loader)}    epoch_loss = {epoch_loss}")
 
-    print(f"F = {epoch_F / len(loader)}")
-
-    return epoch_loss / len(loader), epoch_acc / len(loader), epoch_F / len(loader)
+    return epoch_loss / len(loader), epoch_acc / len(loader), (epoch_TP / len(loader), epoch_TN / len(loader))
 
 
 def evaluate(model, loader, criterion):
     epoch_loss = 0
     epoch_acc = 0
-    epoch_F = 0
+    epoch_TP, epoch_TN = 0, 0
 
     model.eval()
 
@@ -147,16 +136,17 @@ def evaluate(model, loader, criterion):
 
             # predictions = predictions.reshape(-1)
 
-            loss = criterion(predictions, diags)
+            loss = criterion(torch.squeeze(predictions), diags)
 
             acc = categorical_accuracy(predictions, diags)
-            F = F_score(predictions, diags)
+            TP, TN = Errors(predictions, diags)
 
             epoch_loss += loss.item()
             epoch_acc += acc
-            epoch_F += F
+            epoch_TP += TP
+            epoch_TN += TN
 
-    return epoch_loss / len(loader), epoch_acc / len(loader), epoch_F / len(loader)
+    return epoch_loss / len(loader), epoch_acc / len(loader), (epoch_TP / len(loader), epoch_TN / len(loader))
 
 
 def epoch_time(start_time, end_time):
@@ -175,8 +165,8 @@ model = model.float()
 for epoch in range(N_EPOCHS):
     start_time = time.time()
 
-    train_loss, train_acc, train_F = train(model, train_loader, optimizer, criterion)
-    test_loss, test_acc, test_F = evaluate(model, test_loader, criterion)
+    train_loss, train_acc, train_Errors = train(model, train_loader, optimizer, criterion)
+    test_loss, test_acc, test_Errors = evaluate(model, test_loader, criterion)
 
     end_time = time.time()
 
@@ -189,8 +179,12 @@ for epoch in range(N_EPOCHS):
     print()
     print(f"Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s")
     print(
-        f"\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}% | Train F: {train_F * 100:.2f}"
+        f"\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%\n"
+        f"Train true arithmia: {train_Errors[0]:.2f}\n"
+        f"Train true norm: {train_Errors[1]:.2f}\n"
     )
     print(
-        f"\t Test. Loss: {test_loss:.3f} |  Test. Acc: {test_loss * 100:.2f}% |  Test. F: {test_F * 100:.2f}"
+        f"\t Test. Loss: {test_loss:.3f} |  Test. Acc: {test_loss * 100:.2f}%\n"
+        f"Test true arithmia: {train_Errors[0]:.2f}\n"
+        f"Test true norm: {train_Errors[1]:.2f}\n"
     )

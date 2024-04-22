@@ -28,10 +28,9 @@ class ECGs_Dataset(torch.utils.data.Dataset):
         """
 
         record = self.ecgs[idx]
-        diag = torch.tensor(self.diags[idx])  # 1 - синусовый ритм, 0 - аритмия
+        diag = torch.tensor(float(1 - self.diags[idx]))
 
-        # return self.transforms(image), self.labels[idx]
-        return record, diag
+        return record, diag                 # 1 - аритмия, 0 - норма
 
     def __len__(self):
         """Returns length of files containing in dataset."""

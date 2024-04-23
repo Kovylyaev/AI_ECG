@@ -1,6 +1,5 @@
 import torch.nn as nn
 import torch.optim as optim
-import torch.backends.cudnn
 import numpy as np
 import time
 import random
@@ -13,7 +12,6 @@ SEED = 1234
 random.seed(SEED)
 np.random.seed(SEED)
 torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
 
 print("Random set")
 train_dataset = ECGs_Dataset(
@@ -39,9 +37,11 @@ input_dim = train_dataset.ecgs.shape[1]
 output_dim = 1  # arithmia or norm
 
 model = LSTM_ECGs_arithm(input_dim, output_dim)
+model.load_state_dict(torch.load('tut1-model.pt'))
 
 
-optimizer = optim.Adam(model.parameters(), lr=1e-1)
+optimizer = optim.AdamW(model.parameters(), lr=1e-2)
+# optimizer.load_state_dict(torch.load('tut2-optimizer.pt'))
 
 criterion = nn.BCEWithLogitsLoss()
 
@@ -72,7 +72,7 @@ def Errors(preds, y):
             fn += 1
             arithm += 1
 
-    return tp / arithm, tn / norm#, fp, fn
+    return tp / arithm if arithm != 0 else 0, tn / norm if norm != 0 else 0#, fp, fn
 
 
 def train(model, loader, optimizer, criterion):
@@ -156,7 +156,7 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-N_EPOCHS = 10
+N_EPOCHS = 333
 
 best_valid_loss = float("inf")
 
@@ -174,17 +174,19 @@ for epoch in range(N_EPOCHS):
 
     if test_loss < best_valid_loss:
         best_valid_loss = test_loss
-        torch.save(model.state_dict(), "tut1-model.pt")
+        torch.save(model.state_dict(), "tut2-model.pt")
+        torch.save(optimizer.state_dict(), "tut2-optimizer.pt")
+
 
     print()
     print(f"Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s")
     print(
-        f"\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%\n"
-        f"Train true arithmia: {train_Errors[0]:.2f}\n"
-        f"Train true norm: {train_Errors[1]:.2f}\n"
+        f"\tTrain Loss: {train_loss:.5f} | Train Acc: {train_acc * 100:.2f}%\n"
+        f"Train true arithmia: {train_Errors[0]:.9f}\n"
+        f"Train true norm: {train_Errors[1]:.9f}\n"
     )
     print(
-        f"\t Test. Loss: {test_loss:.3f} |  Test. Acc: {test_loss * 100:.2f}%\n"
-        f"Test true arithmia: {train_Errors[0]:.2f}\n"
-        f"Test true norm: {train_Errors[1]:.2f}\n"
+        f"\t Test. Loss: {test_loss:.5f} |  Test. Acc: {test_loss * 100:.2f}%\n"
+        f"Test true arithmia: {train_Errors[0]:.9f}\n"
+        f"Test true norm: {train_Errors[1]:.9f}\n"
     )

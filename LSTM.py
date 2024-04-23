@@ -1,3 +1,5 @@
+import math
+
 import torch.nn as nn
 # import numpy as np
 
@@ -23,10 +25,14 @@ class LSTM_ECGs_arithm(nn.Module):
 
         self.fc = nn.Linear(hidden_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
-        self.sigmoid = nn.Sigmoid()
 
         for name, param in self.named_parameters():
-            nn.init.normal_(param.data, mean=0, std=0.5)
+            # nn.init.normal_(param.data, mean=0, std=0.1)
+            if name.find("bias") != -1:   # это должно подойти, т.к. у нас функция активации как раз тангенс
+                param.data.fill_(0)
+            else:
+                bound = math.sqrt(6)/math.sqrt(param.shape[0]+param.shape[1])
+                param.data.uniform_(-bound, bound)
 
     def forward(self, records):
         """Inputs:
@@ -51,14 +57,7 @@ class LSTM_ECGs_arithm(nn.Module):
 
         reshaped = (records.swapaxes(0, 1)).swapaxes(0, 2)
         outputs, (hidden, cell) = self.lstm(reshaped)
-        # p = np.array(reshaped)
-        # for i in p:
-        #     for j in i:
-        #         if any(np.isnan(k) for k in j):
-        #             print("NNNNNNAAAAAANNNNNN in reshaped")
-        #     #print()
-        predictions = self.fc(outputs[-1])
 
-        #predictions = self.sigmoid(predictions)
+        predictions = self.fc(outputs[-1])
 
         return predictions

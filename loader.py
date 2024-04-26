@@ -8,13 +8,14 @@ from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 
 
-padding = 0
+PADDING = 0
+NUMDOTSFORSINFILTER = 30
 
 
 def my_correlate(ecg, peak_filter):
-    temp = [*([ecg[0]] * 29), *ecg, *([ecg[-1]] * 29)]
+    temp = [*([ecg[0]] * (NUMDOTSFORSINFILTER - 1)), *ecg, *([ecg[-1]] * (NUMDOTSFORSINFILTER - 1))]
     ecg_add = np.correlate(temp, peak_filter, mode="same")
-    ecg = ecg_add[29:-29]
+    ecg = ecg_add[(NUMDOTSFORSINFILTER - 1):-(NUMDOTSFORSINFILTER - 1)]
 
     return ecg
 
@@ -24,7 +25,7 @@ def cut_n_fill(ecg):
     ecg = np.array(ecg)
     ecg_len_to_time_ratio = int(10000.0 / len(ecg10))
 
-    v = np.linspace(-0.5 * np.pi, 1.5 * np.pi, 30)
+    v = np.linspace(-0.5 * np.pi, 1.5 * np.pi, NUMDOTSFORSINFILTER)
     peak_filter = np.sin(v)
     ecg_transformed = my_correlate(ecg10, peak_filter)
 
@@ -69,12 +70,12 @@ def cut_n_fill(ecg):
     n = 5000 - len(ecg10_cutted)
     if left_edge < 0 or right_edge < 0 or n > 2000:
         raise 13
-    ecg = np.pad(ecg, ((0, 0), (n, 0)), "constant", constant_values=padding)
+    ecg = np.pad(ecg, ((0, 0), (n, 0)), "constant", constant_values=PADDING)
 
-    # plt.figure(figsize=(10, 5))
-    # plt.plot(range(0, 10000, 2), ecg[10], alpha=0.8, c='orange')
-    # plt.xlabel('Time (milliseconds)')
-    # plt.show()
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(0, 10000, 2), ecg[10], alpha=0.8, c='orange')
+    plt.xlabel('Time (milliseconds)')
+    plt.show()
 
     return ecg
 

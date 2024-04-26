@@ -4,6 +4,8 @@ import numpy as np
 import time
 import random
 import torch
+from matplotlib import pyplot as plt
+
 from my_dataset import ECGs_Dataset
 from LSTM import LSTM_ECGs_arithm
 
@@ -37,11 +39,11 @@ input_dim = train_dataset.ecgs.shape[1]
 output_dim = 1  # arithmia or norm
 
 model = LSTM_ECGs_arithm(input_dim, output_dim)
-model.load_state_dict(torch.load('tut1-model.pt'))
+model.load_state_dict(torch.load('tut2-model.pt'))
 
 
 optimizer = optim.AdamW(model.parameters(), lr=1e-2)
-# optimizer.load_state_dict(torch.load('tut2-optimizer.pt'))
+optimizer.load_state_dict(torch.load('tut2-optimizer.pt'))
 
 criterion = nn.BCEWithLogitsLoss()
 
@@ -162,6 +164,10 @@ best_valid_loss = float("inf")
 
 model = model.float()
 
+Train_Loss, Train_Acc, Train_TP, Train_TN = [], [], [], []
+Test_Loss, Test_Acc, Test_TP, Test_TN = [], [], [], []
+
+
 for epoch in range(N_EPOCHS):
     start_time = time.time()
 
@@ -187,6 +193,6 @@ for epoch in range(N_EPOCHS):
     )
     print(
         f"\t Test. Loss: {test_loss:.5f} |  Test. Acc: {test_loss * 100:.2f}%\n"
-        f"Test true arithmia: {train_Errors[0]:.9f}\n"
-        f"Test true norm: {train_Errors[1]:.9f}\n"
+        f"Test true arithmia: {test_Errors[0]:.9f}\n"
+        f"Test true norm: {test_Errors[1]:.9f}\n"
     )

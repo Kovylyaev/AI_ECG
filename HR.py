@@ -24,12 +24,12 @@ def my_correlate(ecg10, peak_filter):
     return ecg10
 
 
-record = loadmat("/Users/aleksandr/PycharmProjects/AI_ECG/JS23462.mat")
+record = loadmat("/Users/aleksandr/PycharmProjects/AI_ECG/JS00001.mat")
 ecg10 = np.array(list(record["val"][10]))
 ecg_len_to_time_ratio = int(10000.0 / len(ecg10))
 
 
-v = np.linspace(-0.5 * np.pi, 1.5 * np.pi, 15)
+v = np.linspace(-0.5 * np.pi, 1.5 * np.pi, 30)
 peak_filter = np.sin(v)
 ecg_transformed = my_correlate(ecg10, peak_filter)
 

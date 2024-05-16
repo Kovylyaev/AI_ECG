@@ -13,12 +13,6 @@ class ECGs_Dataset(torch.utils.data.Dataset):
         self.ecgs = np.load(ecgs)
         self.diags = np.load(diags)
 
-        # self.transforms = Compose(
-        #     [
-        #         ToTensor()
-        #     ]
-        # )
-
     def __getitem__(self, idx: int):
         """Returns the object by given index.
         Args:
@@ -33,6 +27,6 @@ class ECGs_Dataset(torch.utils.data.Dataset):
         return record, diag                 # 1 - аритмия, 0 - норма
 
     def __len__(self):
-        """Returns length of files containing in dataset."""
+        """Returns number of ecgs' records in dataset."""
 
         return len(self.ecgs)

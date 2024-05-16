@@ -13,6 +13,13 @@ NUMDOTSFORSINFILTER = 30
 
 
 def my_correlate(ecg, peak_filter):
+    """Returns the cross-correlation of two given 1D-arrays with increased linearity.
+    Args:
+        ecg - record of the ECG.
+        peak_filter - sin filter, that helps to find peaks.
+    Returns:
+        ecg correlated with peak_filter.
+    """
     temp = [*([ecg[0]] * (NUMDOTSFORSINFILTER - 1)), *ecg, *([ecg[-1]] * (NUMDOTSFORSINFILTER - 1))]
     ecg_add = np.correlate(temp, peak_filter, mode="same")
     ecg = ecg_add[(NUMDOTSFORSINFILTER - 1):-(NUMDOTSFORSINFILTER - 1)]
@@ -21,6 +28,12 @@ def my_correlate(ecg, peak_filter):
 
 
 def cut_n_fill(ecg):
+    """Returns cutted and padded with zeros ecg.
+    Args:
+        ecg - record of the ECG.
+    Returns:
+        Cutted and filled ecg.
+    """
     ecg10 = ecg[10]
     ecg = np.array(ecg)
     ecg_len_to_time_ratio = int(10000.0 / len(ecg10))
@@ -35,35 +48,37 @@ def cut_n_fill(ecg):
     rr_peaks1000 = rr_peaks500 * ecg_len_to_time_ratio
 
     # Проверка первого и последнего зубца на полное вхождение в запись
-    min_dist_to_left_edge = int(
+
+    double_optim_dist_to_left_edge = int(
         min(500, rr_peaks500[1] - rr_peaks500[0])
-    )  # минимальное расстояние до границ записи
-    min_dist_to_right_edge = int(
+    )  # минимальное расстояние до границ записи в миллисекундах
+    double_optim_dist_to_right_edge = int(
         min(500, rr_peaks500[-1] - rr_peaks500[-2])
-    )  # в миллисекундах
+    )
 
     ecg10_cutted = ecg10
     left_offset = 0
 
-    if 10000 - rr_peaks1000[-1] < min_dist_to_right_edge:
+    if 10000 - rr_peaks1000[-1] < double_optim_dist_to_right_edge:
         ecg10_cutted = ecg10_cutted[: rr_peaks500[-1]]
         ecg = ecg[:, : rr_peaks500[-1]]
 
-    if rr_peaks1000[0] < min_dist_to_left_edge:
+    if rr_peaks1000[0] < double_optim_dist_to_left_edge:
         ecg10_cutted = ecg10_cutted[
             rr_peaks500[0]:
-        ]  # обрезали по первому и последнему пику,
-        left_offset += rr_peaks500[0]  # если они слишком близко к краю
+        ]  # обрезаем по первому и последнему пику, если они слишком близко к краю
+        left_offset += rr_peaks500[0]
         ecg = ecg[:, rr_peaks500[0]:]
 
     ecg_cutted_transformed = my_correlate(ecg10_cutted, peak_filter)
     rr_peaks_new, _ = find_peaks(ecg_cutted_transformed, height=2500, distance=120)
     if len(rr_peaks_new) == 0:
         raise 13
-    right_edge = rr_peaks_new[-1] + int(min_dist_to_right_edge / 2)
-    left_edge = rr_peaks_new[0] - int(min_dist_to_left_edge / 2)
-    ecg10_cutted = ecg10_cutted[:right_edge]  # обрезаем, если они
-    ecg10_cutted = ecg10_cutted[left_edge:]  # слишком далеко от края записи
+
+    right_edge = rr_peaks_new[-1] + int(double_optim_dist_to_right_edge / 2)
+    left_edge = rr_peaks_new[0] - int(double_optim_dist_to_left_edge / 2)
+    ecg10_cutted = ecg10_cutted[:right_edge]  # обрезаем, если они слишком далеко от края записи
+    ecg10_cutted = ecg10_cutted[left_edge:]
     ecg = ecg[:, :right_edge]
     ecg = ecg[:, left_edge:]
 
@@ -72,15 +87,21 @@ def cut_n_fill(ecg):
         raise 13
     ecg = np.pad(ecg, ((0, 0), (n, 0)), "constant", constant_values=PADDING)
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(0, 10000, 2), ecg[10], alpha=0.8, c='orange')
-    plt.xlabel('Time (milliseconds)')
-    plt.show()
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(list(range(0, 10000, 2)), ecg[10], c='orange')
+    # plt.xlabel('Time (milliseconds)')
+    # plt.show()
 
     return ecg
 
 
 def normalization(ecg):
+    """Returns normalized (min-max norm) ecg record.
+    Args:
+        ecg - record of the ECG.
+    Returns:
+        Normalized ecg.
+    """
     for i in range(len(ecg)):
         for j in range(len(ecg[i])):
             if np.isnan(ecg[i][j]):
@@ -88,9 +109,12 @@ def normalization(ecg):
 
         minn = min(ecg[i])
         maxx = max(ecg[i])
+
         if maxx - minn < 0.00001:
             raise 13
+
         ecg[i] = (ecg[i] - minn) / (maxx - minn)
+
     return ecg
 
 
@@ -117,14 +141,12 @@ for ind, filename in zip(range(len(paths)), paths):
     except:
         continue  # 13 - чересчур странная ЭКГ (не представляется возможным её нормально обрезать/обработать)
 
-    if ind < 37001:
+    if ind < 37001:  # разделение на тренировочную и тестовую выборку
         ECGs_train.append(patient_ecg)
         Diagnoses_train.append(int(record.comments[2][4:] == "426783006"))
     else:
         ECGs_test.append(patient_ecg)
         Diagnoses_test.append(int(record.comments[2][4:] == "426783006"))
-
-    print(ind, filename.resolve().stem)
 
 train_ECGs_np = np.array(ECGs_train)
 train_Diags_np = np.array(Diagnoses_train)
@@ -156,6 +178,3 @@ del train_ECGs_np
 del train_Diags_np
 del test_ECGs_np
 del test_Diags_np
-
-
-print(0)

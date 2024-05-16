@@ -178,10 +178,10 @@ model = LSTM_ECGs_arithm(input_dim, output_dim)
 #model.load_state_dict(torch.load('/content/drive/MyDrive/AI_ECG/tut4-model.pt'))
 
 
-optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0)
 #optimizer.load_state_dict(torch.load('/content/drive/MyDrive/AI_ECG/tut4-optimizer.pt'))
 
-criterion = nn.BCEWithLogitsLoss()
+criterion = torch.nn.BCEWithLogitsLoss()
 
 
 

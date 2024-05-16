@@ -1,7 +1,5 @@
 import math
-
 import torch.nn as nn
-# import numpy as np
 
 
 class LSTM_ECGs_arithm(nn.Module):
@@ -9,11 +7,19 @@ class LSTM_ECGs_arithm(nn.Module):
             self,
             input_dim,
             output_dim,
-            hidden_dim=32,  # 128
+            hidden_dim=128,  # 128
             n_layers=1,  # 2
             dropout=0.0,  # 0.25
     ):
         super().__init__()
+        """Initializes LSTM with passed arguments.
+        Args:
+            input_dim: dim of input vector,
+            output_dim: dim of output vector,
+            hidden_dim: dim of hidden layer,
+            n_layers: num of input layers,
+            dropout: probability of randomly zeroed some of the elements of the input tensor.
+        """
 
         self.lstm = nn.LSTM(
             input_dim,
@@ -24,12 +30,10 @@ class LSTM_ECGs_arithm(nn.Module):
         )
 
         self.fc = nn.Linear(hidden_dim, output_dim)
-        self.dropout = nn.Dropout(dropout)
 
         for name, param in self.named_parameters():
-            # nn.init.normal_(param.data, mean=0, std=0.1)
             if name.find("bias") != -1:   # это должно подойти, т.к. у нас функция активации как раз тангенс
-                param.data.fill_(0)
+                param.data.fill_(0)       # Улучшенная инициализация весов
             else:
                 bound = math.sqrt(6)/math.sqrt(param.shape[0]+param.shape[1])
                 param.data.uniform_(-bound, bound)

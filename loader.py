@@ -135,6 +135,13 @@ for ind, filename in zip(range(len(paths)), paths):
     record = wfdb.rdrecord(f"{s.parent}/{s.stem}")
     patient_ecg = np.matrix.transpose(record.p_signal) * 1000
 
+    plt.figure(figsize=(10, 5))
+    plt.plot(list(range(0, 10000, 2)), patient_ecg[10], c='orange')
+    plt.title('Patient ecg (11th lead)')
+    plt.xlabel('Time (milliseconds)')
+    plt.ylabel('Amplitude (microvolt)')
+    plt.show()
+
     try:
         patient_ecg = cut_n_fill(patient_ecg)
         patient_ecg = normalization(patient_ecg)

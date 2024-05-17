@@ -99,21 +99,7 @@ def train(model, loader, optimizer, criterion):
     for records, diags in loader:
         optimizer.zero_grad()
 
-        # records = [batch size, num of ecg canals, record len (5000)]
-
         predictions = model(records.float())
-
-        # predictions = [batch size, output dim]
-        # diags = [batch size, output_dim]
-
-        # predictions = predictions.view(-1, predictions.shape[-1])
-        # tags = tags.view(-1)
-        #
-        # # predictions = [sent len * batch size, output dim]
-        # # diags = [sent len * batch size]
-        # predictions = predictions.reshape(-1)
-
-        # predictions = torch.squeeze(predictions)
 
         loss = criterion(torch.squeeze(predictions), diags)
 
@@ -149,8 +135,6 @@ def evaluate(model, loader, criterion):
     with torch.no_grad():
         for records, diags in loader:
             predictions = model(records.float())
-
-            # predictions = predictions.reshape(-1)
 
             loss = criterion(torch.squeeze(predictions), diags)
 
